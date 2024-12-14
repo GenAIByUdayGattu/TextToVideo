@@ -1,28 +1,38 @@
 import streamlit as st
 import requests
 
-# Streamlit app title
-st.title("🎥 Video Generation Chatbot")
+# Replace with your backend URL
+backend_url = "http://localhost:8000/generate_video"
 
-# Generate Video Tab
-st.header("Generate Video")
-user_input = st.text_input("Enter your video description:")
-if st.button("Generate Video"):
-    if not user_input:
-        st.error("Please provide a description!")
-    else:
-        with st.spinner("Generating video..."):
-            try:
-                # Send user input to backend
+# Streamlit App
+st.title("Text-to-Video Generation Chatbot")
+st.write("Enter a text prompt, and the system will generate a video for you using Runway ML!")
+
+# Input field for user prompt
+user_input = st.text_input("Enter your prompt:")
+
+# Submit button
+if st.button("Submit"):
+    if user_input.strip():
+        try:
+            # Send user input to the backend
+            with st.spinner("Processing..."):
                 response = requests.post(
-                    "http://127.0.0.1:8000/generate_video",
-                    json={"user_input": user_input},
+                    backend_url,
+                    json={"user_input": user_input}
                 )
                 if response.status_code == 200:
-                    video_path = response.json().get("video_path")
-                    st.video(video_path)
-                    st.success("Video generated successfully!")
+                    data = response.json()
+                    video_url = data.get("video_url")
+
+                    if video_url:
+                        st.success("Processing Complete!")
+                        st.video(video_url)
+                    else:
+                        st.error("Failed to retrieve the video URL.")
                 else:
-                    st.error(f"Error: {response.text}")
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+                    st.error(f"Error: {response.json().get('detail', 'Unknown error')}")
+        except Exception as e:
+            st.error(f"Failed to connect to backend: {e}")
+    else:
+        st.warning("Please enter a valid input.")
